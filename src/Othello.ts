@@ -26,7 +26,7 @@ export function Othello() {
       { name: 'Lena', colour: 'black' },
       { name: 'George', colour: 'white' },
     ],
-    turnForPlayer: number,
+    turnForPlayer: 0 | 1,
     board: (0 | 1 | typeof x)[];
 
   function reset() {
@@ -53,12 +53,64 @@ export function Othello() {
     return position.downwards * size + position.rightwards;
   }
 
-  function playAtPosition(position: Position) {
-    console.log(position);
+  function addPosition(p1: Position, p2: Position) {
+    p1.rightwards += p2.rightwards;
+    p1.downwards += p2.downwards;
   }
 
-  function flipPiecesStartingFromPosition(position: Position) {
+  function flippableOpponentPiecesByDirection(position: Position, player: 0 | 1) {
+    const opponent = 1 - player;
 
+    return directions.map(direction => {
+      let opponentPieces = 0;
+      const currentPosition = { ...position };
+
+      while (true) {
+        addPosition(currentPosition, direction);
+        const currentIndex = pieceIndexFromPosition(currentPosition)!;
+        if (board[currentIndex] === opponent) opponentPieces += 1;
+        else if (board[currentIndex] === player) return opponentPieces;
+        else return 0;
+      }
+    });
+  }
+
+  function flipPiecesByDirections(position: Position, pieceCounts: number[]) {
+    for (let i = 0; i < directions.length; i++) {
+      const
+        direction = directions[i],
+        currentPosition = { ...position };
+
+      for (let j = 0; j < pieceCounts[i]; j++) {
+        addPosition(currentPosition, direction);
+        const pieceIndex = pieceIndexFromPosition(currentPosition)!;
+        board[pieceIndex] = 1 - board[pieceIndex] as 0 | 1;
+      }
+    }
+  }
+
+  function playAtPieceIndex(pieceIndex: number) {
+    const currentPiece = board[pieceIndex];
+
+    if (currentPiece !== x) {
+      alert(`Sorry, you can't go there: there's a piece there already`);
+      return;
+    }
+
+    const
+      position = positionFromPieceIndex(pieceIndex)!,
+      flippablesByDirection = flippableOpponentPiecesByDirection(position, turnForPlayer),
+      flippablesCount = flippablesByDirection.reduce((memo, n) => memo + n);
+
+    if (flippablesCount === 0) {
+      alert(`Sorry, you can't go there: you must flip at least one of your opponent's pieces every turn`);
+      return;
+    }
+
+    board[pieceIndex] = turnForPlayer;
+    flipPiecesByDirections(position, flippablesByDirection);
+
+    turnForPlayer = 1 - turnForPlayer as 0 | 1;
   }
 
   return {
@@ -110,10 +162,7 @@ export function Othello() {
               border: '1px solid #251',
               background: playerIndex !== x ? players[playerIndex].colour : 'transparent',
             },
-            onclick: () => {
-              const position = positionFromPieceIndex(pieceIndex);
-              playAtPosition(position!);
-            }
+            onclick: () => playAtPieceIndex(pieceIndex)
           })
         ))
     )
