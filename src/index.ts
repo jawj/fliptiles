@@ -122,10 +122,24 @@ function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1) {
   m.route.set(routeTemplate, { boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: newPlayer });
 }
 
+function playerCanPlay(board: Board, player: 0 | 1) {
+  return board.some((piece, pieceIndex) =>
+    piece === x ?
+      flippableOpponentPiecesByDirection(board, positionFromPieceIndex(pieceIndex)!, player)
+        .reduce((memo, n) => memo + n) > 0 :
+      false
+  );
+}
+
+function piecesByPlayer(board: Board) {
+  return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
+}
+
 export function Othello() {
   let errorIndex: number | undefined;
 
   return {
+    onupdate: () => errorIndex = undefined,
     view: (vnode: m.Vnode<OthelloAttrs>) => {
       const
         { boardStr, turnStr, lastPieceStr } = vnode.attrs,
@@ -133,16 +147,33 @@ export function Othello() {
         turnForPlayer = Number(turnStr) as 0 | 1,
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
         lastPiecePosition = positionFromPieceIndex(lastPieceIndex ?? -1),
-        piecesPerPlayer = board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
+        piecesPerPlayer = piecesByPlayer(board),
+        canPlay = playerCanPlay(board, turnForPlayer),
+        opponent = 1 - turnForPlayer as 0 | 1,
+        opponentCanPlay = !canPlay && playerCanPlay(board, opponent),
+        gameOver = !canPlay && !opponentCanPlay,
+        winning = piecesPerPlayer[0] > piecesPerPlayer[1] ? 0 :
+          piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
 
       return m('.game',
+        {
+          style: {
+            font: `20px/ 26px 'Source Sans Pro', sans- serif`,
+            margin: '4vh 6vw',
+            color: '#333',
+          }
+        },
         players.map((player, playerIndex) => m('.player',
           {
             style: {
-              padding: '5px',
-              borderRadius: '10px',
-              background: playerIndex === turnForPlayer ? 'yellow' : 'transparent',
-              width: '350px',
+              padding: '3px 5px 5px',
+              borderRadius: '40px',
+              background: gameOver && winning === playerIndex ? '#000' :
+                !gameOver && playerIndex === turnForPlayer ? 'yellow' : 'transparent',
+              color: gameOver && winning === playerIndex ? '#fff' : 'inherit',
+              width: '365px',
+              margin: '0 10px 10px 0',
+              float: 'left',
             }
           },
           m('.piece', {
@@ -150,23 +181,32 @@ export function Othello() {
               display: 'inline-block',
               width: '16px', height: '16px',
               borderRadius: '16px',
-              border: '1px solid #251',
+              border: '1px solid #999',
               margin: '1px 10px 5px',
               position: 'relative',
               top: '6px',
-              background: players[playerIndex].colour,
+              background: player.colour
             }
           }),
-          player.name, ' — ', piecesPerPlayer[playerIndex]
+          player.name,
+          gameOver && winning === playerIndex && m('b', ' wins'),
+          ' (', piecesPerPlayer[playerIndex], ')',
+          playerIndex === turnForPlayer && !canPlay && opponentCanPlay && [
+            m('b', ` can't play `), ' — ',
+            m(m.route.Link, {
+              href: routeTemplate,
+              params: { ...vnode.attrs, turnStr: opponent },
+            }, `Pass`)]
         )),
         m('.board',
           {
             style: {
               background: '#372',
               width: '720px', height: '720px',
-              borderRadius: '40px',
-              margin: '10px 0',
+              borderRadius: '55px',
+              margin: '10px 0 20px',
               padding: '20px',
+              clear: 'left',
             }
           },
           board.map((playerIndex, pieceIndex) => {
@@ -214,7 +254,7 @@ export function Othello() {
             )
           })
         ),
-        m(m.route.Link, { selector: 'button', href: defaultRoute }, 'Start again')
+        m(m.route.Link, { href: defaultRoute }, 'Start again')
       )
     }
   };
