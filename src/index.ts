@@ -220,7 +220,7 @@ export function Othello() {
               commonPieceStyle = {
                 ...commonPieceSizeStyle, position: 'absolute', backfaceVisibility: 'hidden',
                 top: playerIndex === x ? '-20px' : '0',
-                transition: pieceIndex === lastPieceIndex ? 'top .25s' : `transform ${.25 * distanceFromLastPlayed}s`
+                transition: pieceIndex === lastPieceIndex ? 'top .25s' : `transform ${.25 * (1 + distanceFromLastPlayed)}s`
               };
 
             return m('div',
@@ -232,7 +232,7 @@ export function Othello() {
                   margin: '5px',
                   background: pieceIndex === errorIndex ? 'rgba(255, 0, 0, .5)' :
                     turnForPlayer === 0 ? 'rgba(0, 0, 0, .05)' : 'rgba(255, 255, 255, .05)',
-                  boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #ff0' : 'none',
+                  boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #fff' : 'none',
                   transition: 'box-shadow .25s .25s, background .5s',
                 },
                 onclick: () => errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer)
