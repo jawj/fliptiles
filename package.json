@@ -10,8 +10,7 @@
   "author": "George MacKerron",
   "license": "ISC",
   "dependencies": {
-    "mithril": "^2.0.4",
-    "remove-accents": "^0.4.2"
+    "mithril": "^2.0.4"
   },
   "devDependencies": {
     "@types/mithril": "^2.0.6",

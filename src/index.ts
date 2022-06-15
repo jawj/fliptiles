@@ -1,7 +1,6 @@
 
 import m from 'mithril';
 
-
 interface OthelloAttrs {
   boardStr: string;
   lastPieceStr: string;
@@ -14,7 +13,6 @@ interface Position {  // can also represent a vector movement
 }
 
 type Board = (0 | 1 | typeof x)[];
-
 
 const
   size = 8,
@@ -47,7 +45,6 @@ const
     { rightwards: 0, downwards: -1 }, // bottom -> top 
     { rightwards: 1, downwards: -1 }, // bottom-left -> top-right
   ];
-
 
 function stringFromBoard(board: Board) {
   return (board.join('') + '22').match(/.{1,3}/g)!.map(x => codeChars.charAt(parseInt(x, 3))).join('');
@@ -124,11 +121,7 @@ function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1) {
 
 function playerCanPlay(board: Board, player: 0 | 1) {
   return board.some((piece, pieceIndex) =>
-    piece === x ?
-      flippableOpponentPiecesByDirection(board, positionFromPieceIndex(pieceIndex)!, player)
-        .reduce((memo, n) => memo + n) > 0 :
-      false
-  );
+    piece === x ? flippableOpponentPiecesByDirection(board, positionFromPieceIndex(pieceIndex)!, player).reduce((memo, n) => memo + n) > 0 : false);
 }
 
 function piecesByPlayer(board: Board) {
