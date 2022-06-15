@@ -1,4 +1,3 @@
-
 import m from 'mithril';
 
 interface OthelloAttrs {
