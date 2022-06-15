@@ -1,6 +1,6 @@
 import m from 'mithril';
 
-interface OthelloAttrs {
+interface FliptilesAttrs {
   boardStr: string;
   lastPieceStr: string;
   turnStr: string;
@@ -28,8 +28,8 @@ const
   ],
   codeChars = '234567bcdfghjkmnpqrstvwxyz-',
   initialBoardStr = stringFromBoard(initialBoard),
-  routeTemplate = '/othello/:boardStr/:lastPieceStr/:turnStr',
-  defaultRoute = `/othello/${initialBoardStr}/-/0`,
+  routeTemplate = '/fliptiles/:boardStr/:lastPieceStr/:turnStr',
+  defaultRoute = `/fliptiles/${initialBoardStr}/-/0`,
   players = [
     { name: 'Black', colour: '#000' },
     { name: 'White', colour: '#fff' },
@@ -127,12 +127,12 @@ function piecesByPlayer(board: Board) {
   return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
 }
 
-export function Othello() {
+export function Fliptiles() {
   let errorIndex: number | undefined;
 
   return {
     onupdate: () => errorIndex = undefined,  // clear error appearance on next redraw
-    view: (vnode: m.Vnode<OthelloAttrs>) => {
+    view: (vnode: m.Vnode<FliptilesAttrs>) => {
       const
         { boardStr, turnStr, lastPieceStr } = vnode.attrs,
         board = boardFromString(boardStr),
@@ -252,4 +252,4 @@ export function Othello() {
   };
 }
 
-m.route(document.body, defaultRoute, { [routeTemplate]: Othello });
+m.route(document.body, defaultRoute, { [routeTemplate]: Fliptiles });
