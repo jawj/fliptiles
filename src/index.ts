@@ -148,6 +148,7 @@ export function Fliptiles() {
           piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
 
       return m('.game',
+        { style: { width: '760px', margin: '0 auto' } },
         players.map((player, playerIndex) => m('.player',
           {
             style: {
@@ -156,8 +157,8 @@ export function Fliptiles() {
               background: gameOver && winning === playerIndex ? '#000' :
                 !gameOver && playerIndex === turnForPlayer ? 'yellow' : 'transparent',
               color: gameOver && winning === playerIndex ? '#fff' : 'inherit',
-              width: '365px',
-              margin: '0 10px 10px 0',
+              width: '370px',
+              margin: '0 0 10px',
               float: 'left',
             }
           },
