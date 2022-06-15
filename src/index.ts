@@ -148,13 +148,6 @@ export function Fliptiles() {
           piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
 
       return m('.game',
-        {
-          style: {
-            font: `20px/ 26px 'Source Sans Pro', sans- serif`,
-            margin: '4vh 6vw',
-            color: '#333',
-          }
-        },
         players.map((player, playerIndex) => m('.player',
           {
             style: {
@@ -196,7 +189,7 @@ export function Fliptiles() {
               background: '#372',
               width: '720px', height: '720px',
               borderRadius: '55px',
-              margin: '10px 0 20px',
+              margin: '10px 0 25px',
               padding: '20px',
               clear: 'left',
             }
@@ -226,6 +219,7 @@ export function Fliptiles() {
                     turnForPlayer === 0 ? 'rgba(0, 0, 0, .05)' : 'rgba(255, 255, 255, .05)',
                   boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #fff' : 'none',
                   transition: 'box-shadow .25s .25s, background .5s',
+                  cursor: playerIndex === 2 ? 'pointer' : 'default',
                 },
                 onclick: () => errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer)
               },
@@ -246,7 +240,11 @@ export function Fliptiles() {
             )
           })
         ),
-        m(m.route.Link, { href: defaultRoute }, 'Start again')
+        m(m.route.Link, { href: defaultRoute, style: { fontWeight: 'bold' } }, 'Start again'),
+        m.trust(' &nbsp; '),
+        m('a', { href: 'https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english' }, 'How to play'),
+        m.trust(' &nbsp; '),
+        m('a', { href: 'https://github.com/jawj/fliptiles' }, 'See the code on GitHub'),
       )
     }
   };
