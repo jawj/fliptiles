@@ -152,13 +152,14 @@ export function Fliptiles() {
         players.map((player, playerIndex) => m('.player',
           {
             style: {
-              padding: '3px 5px 5px',
+              padding: '6px 10px 8px',
               borderRadius: '40px',
-              background: gameOver && winning === playerIndex ? '#000' :
-                !gameOver && playerIndex === turnForPlayer ? 'yellow' : 'transparent',
-              color: gameOver && winning === playerIndex ? '#fff' : 'inherit',
-              width: '370px',
-              margin: '0 0 10px',
+              background: (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && playerIndex === winning && playerIndex === 0) ? '#000' :
+                (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && playerIndex === winning && playerIndex === 1) ? '#fff' : 'transparent',
+              color: (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && winning === 0 && playerIndex === 0) ? '#fff' :
+                (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && winning && playerIndex === 1) ? '#000' : 'inherit',
+              width: '360px',
+              margin: '0 0 15px',
               float: 'left',
             }
           },
@@ -175,14 +176,15 @@ export function Fliptiles() {
             }
           }),
           player.name,
+          playerIndex === turnForPlayer && canPlay && `’s turn`,
           gameOver && winning === playerIndex && m('b', ' wins'),
-          ' (', piecesPerPlayer[playerIndex], ')',
           playerIndex === turnForPlayer && !canPlay && opponentCanPlay && [
             m('b', ` can't play `), ' — ',
             m(m.route.Link, {
               href: routeTemplate,
               params: { ...vnode.attrs, turnStr: opponent },
-            }, `Pass`)]
+            }, `Pass`)],
+          ' (', piecesPerPlayer[playerIndex], ')',
         )),
         m('.board',
           {
