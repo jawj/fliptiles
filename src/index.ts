@@ -31,8 +31,8 @@ const
   routeTemplate = '/othello/:boardStr/:lastPieceStr/:turnStr',
   defaultRoute = `/othello/${initialBoardStr}/-/0`,
   players = [
-    { name: 'Black', colour: 'black' },
-    { name: 'White', colour: 'white' },
+    { name: 'Black', colour: '#000' },
+    { name: 'White', colour: '#fff' },
   ],
   directions: Position[] = [
     { rightwards: 1, downwards: 0 }, // left -> right
@@ -98,24 +98,24 @@ function flipPiecesByDirections(board: Board, position: Position, pieceCounts: n
   }
 }
 
-function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1) {
+function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1) {  // returns undefined if OK, otherwise piece index of bad play
   const currentPiece = board[pieceIndex];
 
-  if (currentPiece !== x) return;
+  if (currentPiece !== x) return;  // can't play where there's already a piece
 
   const
     position = positionFromPieceIndex(pieceIndex)!,
     flippablesByDirection = flippableOpponentPiecesByDirection(board, position, player),
     flippablesCount = flippablesByDirection.reduce((memo, n) => memo + n);
 
-  if (flippablesCount === 0) return pieceIndex;
+  if (flippablesCount === 0) return pieceIndex;  // can't play if nothing gets flipped
 
   const newBoard = [...board];
   newBoard[pieceIndex] = player;
   flipPiecesByDirections(newBoard, position, flippablesByDirection);
 
-  const newPlayer = 1 - player as 0 | 1;
-  m.route.set(routeTemplate, { boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: newPlayer });
+  const opponent = 1 - player as 0 | 1;
+  m.route.set(routeTemplate, { boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: opponent });
 }
 
 function playerCanPlay(board: Board, player: 0 | 1) {
@@ -131,7 +131,7 @@ export function Othello() {
   let errorIndex: number | undefined;
 
   return {
-    onupdate: () => errorIndex = undefined,
+    onupdate: () => errorIndex = undefined,  // clear error appearance on next redraw
     view: (vnode: m.Vnode<OthelloAttrs>) => {
       const
         { boardStr, turnStr, lastPieceStr } = vnode.attrs,
