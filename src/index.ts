@@ -154,10 +154,12 @@ export function Fliptiles() {
             style: {
               padding: '6px 10px 8px',
               borderRadius: '40px',
-              background: (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && playerIndex === winning && playerIndex === 0) ? '#000' :
-                (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && playerIndex === winning && playerIndex === 1) ? '#fff' : 'transparent',
-              color: (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && winning === 0 && playerIndex === 0) ? '#fff' :
-                (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && winning && playerIndex === 1) ? '#000' : 'inherit',
+              background: !gameOver && turnForPlayer === playerIndex && !canPlay ? '#fc0' :
+                (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && playerIndex === winning && playerIndex === 0) ? '#000' :
+                  (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && playerIndex === winning && playerIndex === 1) ? '#fff' : 'transparent',
+              color: !gameOver && turnForPlayer === playerIndex && !canPlay ? '#000' :
+                (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && winning === 0 && playerIndex === 0) ? '#fff' :
+                  (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && winning && playerIndex === 1) ? '#000' : 'inherit',
               width: '360px',
               margin: '0 0 15px',
               float: 'left',
@@ -175,16 +177,17 @@ export function Fliptiles() {
               background: player.colour
             }
           }),
-          player.name,
-          playerIndex === turnForPlayer && canPlay && `’s turn`,
-          gameOver && winning === playerIndex && m('b', ' wins'),
+          player.name, ' (', piecesPerPlayer[playerIndex], ') ',
+          playerIndex === turnForPlayer && canPlay && ` to play `,
+          gameOver && winning === playerIndex && m('b', ' wins '),
+          gameOver && winning === undefined && m('b', ' draws '),
           playerIndex === turnForPlayer && !canPlay && opponentCanPlay && [
-            m('b', ` can't play `), ' — ',
+            m('b', ` can’t play `), ' — ',
             m(m.route.Link, {
               href: routeTemplate,
               params: { ...vnode.attrs, turnStr: opponent },
             }, `Pass`)],
-          ' (', piecesPerPlayer[playerIndex], ')',
+
         )),
         m('.board',
           {
