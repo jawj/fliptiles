@@ -4,6 +4,7 @@ interface FliptilesAttrs {
   boardStr: string;
   lastPieceStr: string;
   turnStr: string;
+  gridNos: 'y' | 'n';
 }
 
 interface Position {  // can also represent a vector movement
@@ -28,8 +29,8 @@ const
   ],
   codeChars = '234567bcdfghjkmnpqrstvwxyz-',
   initialBoardStr = stringFromBoard(initialBoard),
-  routeTemplate = '/fliptiles/:boardStr/:lastPieceStr/:turnStr',
-  defaultRoute = `/fliptiles/${initialBoardStr}/-/0`,
+  routeTemplate = '/:gridNos/:boardStr/:lastPieceStr/:turnStr',
+  defaultRoute = `/n/${initialBoardStr}/-/0`,
   players = [
     { name: 'Black', colour: '#000' },
     { name: 'White', colour: '#fff' },
@@ -98,7 +99,7 @@ function flipPiecesByDirections(board: Board, position: Position, pieceCounts: n
   }
 }
 
-function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1) {  // returns undefined if OK, otherwise piece index of bad play
+function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode: m.Vnode<FliptilesAttrs>) {  // returns undefined if OK, otherwise piece index of bad play
   const currentPiece = board[pieceIndex];
 
   if (currentPiece !== x) return;  // can't play where there's already a piece
@@ -115,7 +116,7 @@ function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1) {  //
   flipPiecesByDirections(newBoard, position, flippablesByDirection);
 
   const opponent = 1 - player as 0 | 1;
-  m.route.set(routeTemplate, { boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: opponent });
+  m.route.set(routeTemplate, { ...vnode.attrs, boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: opponent });
 }
 
 function playerCanPlay(board: Board, player: 0 | 1) {
@@ -134,7 +135,7 @@ export function Fliptiles() {
     onupdate: () => errorIndex = undefined,  // clear error appearance on next redraw
     view: (vnode: m.Vnode<FliptilesAttrs>) => {
       const
-        { boardStr, turnStr, lastPieceStr } = vnode.attrs,
+        { boardStr, turnStr, lastPieceStr, gridNos } = vnode.attrs,
         board = boardFromString(boardStr),
         turnForPlayer = Number(turnStr) as 0 | 1,
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
@@ -222,13 +223,22 @@ export function Fliptiles() {
                   float: 'left',
                   margin: '5px',
                   background: pieceIndex === errorIndex ? 'rgba(255, 0, 0, .5)' :
-                    turnForPlayer === 0 ? 'rgba(0, 0, 0, .05)' : 'rgba(255, 255, 255, .05)',
+                    turnForPlayer === 0 ? 'rgba(0, 0, 0, .075)' : 'rgba(255, 255, 255, .075)',
                   boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #fff' : 'none',
                   transition: 'box-shadow .25s .25s, background .5s',
                   cursor: playerIndex === 2 ? 'pointer' : 'default',
+                  color: '#372',
+                  fontSize: '36px',
+                  textAlign: 'center',
+                  lineHeight: '77px',
+                  fontWeight: 'bold',
                 },
-                onclick: () => errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer)
+                onclick: () => errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode)
               },
+              gridNos === 'y' && [
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][piecePosition.rightwards],
+                piecePosition.downwards + 1,
+              ],
               m('.piece0', {
                 style: {
                   ...commonPieceStyle,
@@ -242,15 +252,24 @@ export function Fliptiles() {
                   transform: playerIndex === 0 ? 'rotateY(180deg)' : playerIndex === 1 ? 'rotateY(0deg)' : 'rotateY(90deg)',
                   background: playerIndex !== x ? players[1].colour : 'transparent',
                 }
-              })
+              }),
             )
           })
         ),
-        m(m.route.Link, { href: defaultRoute, style: { fontWeight: 'bold' } }, 'Start again'),
+        m('label',
+          { style: { float: 'right' } },
+          m('input[type=checkbox]', {
+            checked: gridNos === 'y',
+            onchange: () =>
+              m.route.set(routeTemplate, { ...vnode.attrs, gridNos: { y: 'n', n: 'y' }[gridNos] })
+          }),
+          ' Named cells'
+        ),
+        m(m.route.Link, { href: `/:gridNos/${initialBoardStr}/-/0`, params: { gridNos }, style: { fontWeight: 'bold' } }, 'Start again'),
         m.trust(' &nbsp; '),
         m('a', { href: 'https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english' }, 'How to play'),
         m.trust(' &nbsp; '),
-        m('a', { href: 'https://github.com/jawj/fliptiles' }, 'See the code on GitHub'),
+        m('a', { href: 'https://github.com/jawj/fliptiles', style: { color: '#aaa' } }, 'See the code on GitHub'),
       )
     }
   };
