@@ -153,7 +153,6 @@ export function Fliptiles() {
           piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
 
       prevBlanks = blanks;
-      console.log(ordinaryMove);
 
       return m('.game',
         { style: { width: '760px', margin: '0 auto' } },
