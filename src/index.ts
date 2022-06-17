@@ -211,7 +211,7 @@ export function Fliptiles() {
               ),
               commonPieceStyle = {
                 ...commonPieceSizeStyle, position: 'absolute', backfaceVisibility: 'hidden',
-                top: playerIndex === x ? '-20px' : '0',
+                top: playerIndex === x ? '-20px' : '0', zIndex: 10,
                 transition: pieceIndex === lastPieceIndex ? 'top .25s' : `transform ${.25 * (1 + distanceFromLastPlayed)}s`
               };
 
