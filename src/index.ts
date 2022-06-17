@@ -1,4 +1,4 @@
-import m from 'mithril';
+import m, { redraw } from 'mithril';
 
 interface FliptilesAttrs {
   boardStr: string;
@@ -129,7 +129,9 @@ function piecesByPlayer(board: Board) {
 }
 
 export function Fliptiles() {
-  let errorIndex: number | undefined;
+  let
+    errorIndex: number | undefined,
+    prevBlanks: number | undefined;
 
   return {
     onupdate: () => errorIndex = undefined,  // clear error appearance on next redraw
@@ -141,12 +143,17 @@ export function Fliptiles() {
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
         lastPiecePosition = positionFromPieceIndex(lastPieceIndex ?? -1),
         piecesPerPlayer = piecesByPlayer(board),
+        blanks = piecesPerPlayer[x],
+        ordinaryMove = prevBlanks === undefined || blanks === prevBlanks - 1,
         canPlay = playerCanPlay(board, turnForPlayer),
         opponent = 1 - turnForPlayer as 0 | 1,
         opponentCanPlay = !canPlay && playerCanPlay(board, opponent),
         gameOver = !canPlay && !opponentCanPlay,
         winning = piecesPerPlayer[0] > piecesPerPlayer[1] ? 0 :
           piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
+
+      prevBlanks = blanks;
+      console.log(ordinaryMove);
 
       return m('.game',
         { style: { width: '760px', margin: '0 auto' } },
@@ -212,7 +219,8 @@ export function Fliptiles() {
               commonPieceStyle = {
                 ...commonPieceSizeStyle, position: 'absolute', backfaceVisibility: 'hidden',
                 top: playerIndex === x ? '-20px' : '0', zIndex: 10,
-                transition: pieceIndex === lastPieceIndex ? 'top .25s' : `transform ${.25 * (1 + distanceFromLastPlayed)}s`
+                transition: pieceIndex === lastPieceIndex ? 'top .25s' :
+                  `transform .5s ${.15 * (1 + distanceFromLastPlayed * (ordinaryMove ? 1 : 0))}s`
               };
 
             return m('div',
@@ -222,7 +230,7 @@ export function Fliptiles() {
                   position: 'relative',
                   float: 'left',
                   margin: '5px',
-                  background: pieceIndex === errorIndex ? 'rgba(255, 0, 0, .5)' :
+                  background: pieceIndex === errorIndex ? '#f60' :
                     turnForPlayer === 0 ? 'rgba(0, 0, 0, .075)' : 'rgba(255, 255, 255, .075)',
                   boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #fff' : 'none',
                   transition: 'box-shadow .25s .25s, background .5s',
@@ -233,7 +241,10 @@ export function Fliptiles() {
                   lineHeight: '77px',
                   fontWeight: 'bold',
                 },
-                onclick: () => errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode)
+                onclick: () => {
+                  errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode);
+                  if (errorIndex !== undefined) setTimeout(m.redraw, 750);
+                }
               },
               gridNos === 'y' && [
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][piecePosition.rightwards],
