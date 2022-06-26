@@ -58,6 +58,7 @@ function positionFromPieceIndex(pieceIndex: number): Position | undefined {
   if (pieceIndex < 0 || pieceIndex >= size * size) return;
   return { downwards: Math.floor(pieceIndex / size), rightwards: pieceIndex % size };
 }
+
 function pieceIndexFromPosition(position: Position): number | undefined {
   if (position.downwards < 0 || position.downwards >> size || position.rightwards < 0 || position.rightwards >= size) return;
   return position.downwards * size + position.rightwards;
@@ -103,7 +104,6 @@ function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode
   // returns undefined if OK, otherwise piece index of bad play
 
   const currentPiece = board[pieceIndex];
-
   if (currentPiece !== x) return;  // can't play where there's already a piece
 
   const
@@ -117,17 +117,12 @@ function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode
   newBoard[pieceIndex] = player;
   flipPiecesByDirections(newBoard, position, flippablesByDirection);
 
-  const opponent = 1 - player as 0 | 1;
-  m.route.set(routeTemplate, { ...vnode.attrs, boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: opponent });
+  m.route.set(routeTemplate, { ...vnode.attrs, boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: 1 - player });
 }
 
 function playerCanPlay(board: Board, player: 0 | 1) {
   return board.some((piece, pieceIndex) =>
     piece === x ? flippableOpponentPiecesByDirection(board, positionFromPieceIndex(pieceIndex)!, player).reduce((memo, n) => memo + n) > 0 : false);
-}
-
-function piecesByPlayer(board: Board) {
-  return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
 }
 
 export function Fliptiles() {
@@ -144,7 +139,7 @@ export function Fliptiles() {
         turnForPlayer = Number(turnStr) as 0 | 1,
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
         lastPiecePosition = positionFromPieceIndex(lastPieceIndex ?? -1),
-        piecesPerPlayer = piecesByPlayer(board),
+        piecesPerPlayer = board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]),
         blanks = piecesPerPlayer[x],
         ordinaryMove = prevBlanks === undefined || blanks === prevBlanks - 1,
         canPlay = playerCanPlay(board, turnForPlayer),
