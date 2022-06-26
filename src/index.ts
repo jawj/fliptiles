@@ -1,4 +1,4 @@
-import m, { redraw } from 'mithril';
+import m from 'mithril';
 
 interface FliptilesAttrs {
   boardStr: string;
@@ -30,7 +30,7 @@ const
   codeChars = '234567bcdfghjkmnpqrstvwxyz-',
   initialBoardStr = stringFromBoard(initialBoard),
   routeTemplate = '/:gridNos/:boardStr/:lastPieceStr/:turnStr',
-  defaultRoute = `/n/${initialBoardStr}/-/0`,
+  defaultRoute = `/n/${initialBoardStr}/-/0`,  // = no cell names, initial board, no previous piece, black to start
   players = [
     { name: 'Black', colour: '#000' },
     { name: 'White', colour: '#fff' },
@@ -99,7 +99,9 @@ function flipPiecesByDirections(board: Board, position: Position, pieceCounts: n
   }
 }
 
-function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode: m.Vnode<FliptilesAttrs>) {  // returns undefined if OK, otherwise piece index of bad play
+function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode: m.Vnode<FliptilesAttrs>) {
+  // returns undefined if OK, otherwise piece index of bad play
+
   const currentPiece = board[pieceIndex];
 
   if (currentPiece !== x) return;  // can't play where there's already a piece
@@ -170,6 +172,7 @@ export function Fliptiles() {
               width: '360px',
               margin: '0 0 15px',
               float: 'left',
+              transition: 'background-color .2s .8s, color .2s .8s',
             }
           },
           m('.piece', {
@@ -279,7 +282,7 @@ export function Fliptiles() {
         m.trust(' &nbsp; '),
         m('a', { href: 'https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english' }, 'How to play'),
         m.trust(' &nbsp; '),
-        m('a', { href: 'https://github.com/jawj/fliptiles', style: { color: '#aaa' } }, 'See the code on GitHub'),
+        m('a', { href: 'https://github.com/jawj/fliptiles', style: { color: '#bbb' } }, 'Code on GitHub'),
       )
     }
   };
