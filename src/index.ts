@@ -27,7 +27,9 @@ const
     x, x, x, x, x, x, x, x,
     x, x, x, x, x, x, x, x,
   ],
-  codeChars = '234567bcdfghjkmnpqrstvwxyz-',
+  origBoardScheme: boolean = true,  // original scheme groups in 3s, takes 22 chars; new scheme groups in 7s, takes 19
+  codeChars = origBoardScheme ? `234567bcdfghjkmnpqrstvwxyz-` : `2345678BbCcDdFfGgHhJjKkMmNnPpQqRrSsTtVvWwXxYyZz`,
+  codeCharHash = Object.fromEntries(codeChars.split('').map((x, i) => [x, i])),
   initialBoardStr = stringFromBoard(initialBoard),
   routeTemplate = '/:gridNos/:boardStr/:lastPieceStr/:turnStr',
   defaultRoute = `/n/${initialBoardStr}/-/0`,  // = no cell names, initial board, no previous piece, black to start
@@ -47,11 +49,20 @@ const
   ];
 
 function stringFromBoard(board: Board) {
-  return (board.join('') + '22').match(/.{1,3}/g)!.map(x => codeChars.charAt(parseInt(x, 3))).join('');
+  return origBoardScheme ?
+    (board.join('') + '22').match(/.{1,3}/g)!.map(x => codeChars.charAt(parseInt(x, 3))).join('') :
+    board.join('').match(/.{7}/g)!.map(x => {
+      const value = parseInt(x, 3);
+      return codeChars.charAt(Math.floor(value / 47)) + codeChars.charAt(value % 47);
+    }).join('') + String(board[63]);
 }
 
 function boardFromString(s: string) {
-  return s.split('').flatMap(x => (27 + codeChars.indexOf(x)).toString(3).slice(-3).split('').map(Number)).slice(0, 64) as Board;
+  return origBoardScheme ?
+    s.split('').flatMap(x => (27 + codeCharHash[x]).toString(3).slice(-3).split('').map(Number)).slice(0, 64) as Board :
+    s.match(/../g)!.flatMap(x =>
+      (2187 + codeCharHash[x.charAt(0)] * 47 + codeCharHash[x.charAt(1)]).toString(3).slice(-7).split('').map(Number)
+    ).concat(Number(s.slice(-1))) as Board;
 }
 
 function positionFromPieceIndex(pieceIndex: number): Position | undefined {
