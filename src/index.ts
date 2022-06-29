@@ -111,9 +111,7 @@ function flipPiecesByDirections(board: Board, position: Position, pieceCounts: n
   }
 }
 
-function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode: m.Vnode<FliptilesAttrs>) {
-  // returns undefined if OK, otherwise piece index of bad play
-
+function boardByPlayingPieceAtIndex(board: Board, pieceIndex: number, player: 0 | 1) {
   const currentPiece = board[pieceIndex];
   if (currentPiece !== x) return;  // can't play where there's already a piece
 
@@ -122,18 +120,66 @@ function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode
     flippablesByDirection = flippableOpponentPiecesByDirection(board, position, player),
     flippablesCount = flippablesByDirection.reduce((memo, n) => memo + n);
 
-  if (flippablesCount === 0) return pieceIndex;  // can't play if nothing gets flipped
+  if (flippablesCount === 0) return;  // can't play if nothing gets flipped
 
   const newBoard = [...board];
   newBoard[pieceIndex] = player;
   flipPiecesByDirections(newBoard, position, flippablesByDirection);
 
+  return newBoard;
+}
+
+function playAtPieceIndex(board: Board, pieceIndex: number, player: 0 | 1, vnode: m.Vnode<FliptilesAttrs>) {
+  const newBoard = boardByPlayingPieceAtIndex(board, pieceIndex, player);
+  if (!Array.isArray(newBoard)) return false;
+
   m.route.set(routeTemplate, { ...vnode.attrs, boardStr: stringFromBoard(newBoard), lastPieceStr: pieceIndex, turnStr: 1 - player });
+  return true;
 }
 
 function playerCanPlay(board: Board, player: 0 | 1) {
   return board.some((piece, pieceIndex) =>
     piece === x ? flippableOpponentPiecesByDirection(board, positionFromPieceIndex(pieceIndex)!, player).reduce((memo, n) => memo + n) > 0 : false);
+}
+
+function piecesByPlayer(board: Board) {
+  return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
+}
+
+function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 4, edgeScore = 3, otherScore = 2) {
+  return board.reduce((memo: number, piece, i) =>
+    memo + (piece !== player ? 0 :
+      i === 0 || i === 7 || i === 56 || i === 63 ? cornerScore :
+        i <= 7 || i >= 56 || i % 8 === 0 || i % 8 === 7 ? edgeScore : otherScore), 0);
+}
+
+function suggestMoves(board: Board, player: 0 | 1) {
+  const opponent = 1 - player as 0 | 1;
+  let
+    bestWorstCaseScore = -Infinity,
+    bestMoves: number[] = [];
+
+  for (let i = 0; i < 64; i++) {
+    const board1 = boardByPlayingPieceAtIndex(board, i, player);
+    if (!Array.isArray(board1)) continue;
+
+    let worstCaseScore = Infinity;
+    for (let j = 0; j < 64; j++) {
+      const board2 = boardByPlayingPieceAtIndex(board1, j, opponent);
+      if (!Array.isArray(board2)) continue;
+      // opponent score isn't redundant because of edge and corner boosts
+      const score = boardScoreForPlayer(board2, player) - boardScoreForPlayer(board2, opponent);
+      if (score < worstCaseScore) worstCaseScore = score;
+    }
+
+    if (worstCaseScore === bestWorstCaseScore) bestMoves.push(i);
+    else if (worstCaseScore > bestWorstCaseScore) {
+      bestWorstCaseScore = worstCaseScore;
+      bestMoves = [i];
+    }
+  }
+
+  return bestMoves;
 }
 
 export function Fliptiles() {
@@ -150,7 +196,7 @@ export function Fliptiles() {
         turnForPlayer = Number(turnStr) as 0 | 1,
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
         lastPiecePosition = positionFromPieceIndex(lastPieceIndex ?? -1),
-        piecesPerPlayer = board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]),
+        piecesPerPlayer = piecesByPlayer(board),
         blanks = piecesPerPlayer[x],
         ordinaryMove = prevBlanks === undefined || blanks === prevBlanks - 1,
         canPlay = playerCanPlay(board, turnForPlayer),
@@ -161,6 +207,13 @@ export function Fliptiles() {
           piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
 
       prevBlanks = blanks;
+
+      let suggestedMove: number | undefined = undefined;
+      const { ai } = vnode.attrs as any;
+      if (String(turnForPlayer) === ai) {
+        const suggestedMoves = suggestMoves(board, turnForPlayer);
+        suggestedMove = suggestedMoves[Math.floor((Math.random() - 0.000000001) * suggestedMoves.length)];
+      }
 
       return m('.game',
         { style: { width: '760px', margin: '0 auto' } },
@@ -238,10 +291,13 @@ export function Fliptiles() {
                   position: 'relative',
                   float: 'left',
                   margin: '5px',
+                  transition: `box-shadow .25s .25s, background .5s${pieceIndex === suggestedMove ? ' 1.5s' : ''}`,
                   background: pieceIndex === errorIndex ? '#f60' :
-                    turnForPlayer === 0 ? 'rgba(0, 0, 0, .075)' : 'rgba(255, 255, 255, .075)',
+                    suggestedMove === pieceIndex ? 'rgba(255, 255, 0, 0.5)' :
+                      'rgba(255, 255, 255, .1)',
+                  // 'linear-gradient(135deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,0.15) 100%)',
+                  // turnForPlayer === 0 ? 'rgba(0, 0, 0, .075)' : 'rgba(255, 255, 255, .075)',
                   boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #fff' : 'none',
-                  transition: 'box-shadow .25s .25s, background .5s',
                   cursor: playerIndex === 2 ? 'pointer' : 'default',
                   color: '#372',
                   fontSize: '36px',
@@ -250,8 +306,11 @@ export function Fliptiles() {
                   fontWeight: 'bold',
                 },
                 onclick: () => {
-                  errorIndex = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode);
-                  if (errorIndex !== undefined) setTimeout(m.redraw, 750);
+                  const success = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode);
+                  if (!success && board[pieceIndex] === x) {
+                    errorIndex = pieceIndex;
+                    setTimeout(m.redraw, 750);
+                  }
                 }
               },
               gridNos === 'y' && [
