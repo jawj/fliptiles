@@ -146,7 +146,7 @@ function piecesByPlayer(board: Board) {
   return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
 }
 
-function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 4, edgeScore = 3, otherScore = 2) {
+function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 3, edgeScore = 2, otherScore = 1) {
   return board.reduce((memo: number, piece, i) =>
     memo + (piece !== player ? 0 :
       i === 0 || i === 7 || i === 56 || i === 63 ? cornerScore :
@@ -185,13 +185,37 @@ function suggestMoves(board: Board, player: 0 | 1) {
 export function Fliptiles() {
   let
     errorIndex: number | undefined,
-    prevBlanks: number | undefined;
+    prevBlanks: number | undefined,
+    aiTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  function afterDraw(vnode: m.Vnode<FliptilesAttrs>) {
+    errorIndex = undefined;  // clear error appearance on next redraw
+
+    if (aiTimeout !== undefined) clearTimeout(aiTimeout);
+    aiTimeout = undefined;
+
+    const
+      { boardStr, turnStr } = vnode.attrs,
+      { ai } = vnode.attrs as any,
+      turnForPlayer = Number(turnStr) as 0 | 1;
+
+    if (String(turnForPlayer) === ai) {
+      const
+        board = boardFromString(boardStr),
+        suggestedMoves = suggestMoves(board, turnForPlayer),
+        suggestedMove = suggestedMoves[Math.floor(Math.random() * suggestedMoves.length)];
+
+      if (suggestedMove) aiTimeout = setTimeout(() => playAtPieceIndex(board, suggestedMove, turnForPlayer, vnode), 2000);
+    }
+  }
 
   return {
-    onupdate: () => errorIndex = undefined,  // clear error appearance on next redraw
+    oncreate: afterDraw,
+    onupdate: afterDraw,
     view: (vnode: m.Vnode<FliptilesAttrs>) => {
       const
         { boardStr, turnStr, lastPieceStr, gridNos } = vnode.attrs,
+        { ai } = vnode.attrs as any,
         board = boardFromString(boardStr),
         turnForPlayer = Number(turnStr) as 0 | 1,
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
@@ -207,13 +231,6 @@ export function Fliptiles() {
           piecesPerPlayer[1] > piecesPerPlayer[0] ? 1 : undefined;
 
       prevBlanks = blanks;
-
-      let suggestedMove: number | undefined = undefined;
-      const { ai } = vnode.attrs as any;
-      if (String(turnForPlayer) === ai) {
-        const suggestedMoves = suggestMoves(board, turnForPlayer);
-        suggestedMove = suggestedMoves[Math.floor((Math.random() - 0.000000001) * suggestedMoves.length)];
-      }
 
       return m('.game',
         { style: { width: '760px', margin: '0 auto' } },
@@ -291,12 +308,9 @@ export function Fliptiles() {
                   position: 'relative',
                   float: 'left',
                   margin: '5px',
-                  transition: `box-shadow .25s .25s, background .5s${pieceIndex === suggestedMove ? ' 1.5s' : ''}`,
+                  transition: `box-shadow .25s .25s, background .5s`,
                   background: pieceIndex === errorIndex ? '#f60' :
-                    suggestedMove === pieceIndex ? 'rgba(255, 255, 0, 0.5)' :
-                      'rgba(255, 255, 255, .1)',
-                  // 'linear-gradient(135deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,0.15) 100%)',
-                  // turnForPlayer === 0 ? 'rgba(0, 0, 0, .075)' : 'rgba(255, 255, 255, .075)',
+                    turnForPlayer === 0 ? 'rgba(0, 0, 0, .075)' : 'rgba(255, 255, 255, .075)',
                   boxShadow: pieceIndex === lastPieceIndex ? '0 0 12px #fff' : 'none',
                   cursor: playerIndex === 2 ? 'pointer' : 'default',
                   color: '#372',
@@ -306,6 +320,8 @@ export function Fliptiles() {
                   fontWeight: 'bold',
                 },
                 onclick: () => {
+                  if (aiTimeout !== undefined) return;
+
                   const success = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode);
                   if (!success && board[pieceIndex] === x) {
                     errorIndex = pieceIndex;
@@ -343,7 +359,7 @@ export function Fliptiles() {
           }),
           ' Named cells'
         ),
-        m(m.route.Link, { href: `/:gridNos/${initialBoardStr}/-/0`, params: { gridNos }, style: { fontWeight: 'bold' } }, 'Start again'),
+        m(m.route.Link, { href: `/:gridNos/${initialBoardStr}/-/0`, params: { gridNos, ...(ai ? { ai } : {}) }, style: { fontWeight: 'bold' } }, 'Start again'),
         m.trust(' &nbsp; '),
         m('a', { href: 'https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english' }, 'How to play'),
         m.trust(' &nbsp; '),
