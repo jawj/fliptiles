@@ -241,15 +241,15 @@ export function Fliptiles() {
           {
             style: {
               position: 'relative',
-              padding: '5px 10px 8px',
-              borderRadius: '40px',
+              height: '40px',
+              width: '380px',
+              borderRadius: '20px',
               background: !gameOver && turnForPlayer === playerIndex && !canPlay ? '#fc0' :
                 (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && playerIndex === winning && playerIndex === 0) ? '#000' :
                   (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && playerIndex === winning && playerIndex === 1) ? '#fff' : 'transparent',
               color: !gameOver && turnForPlayer === playerIndex && !canPlay ? '#000' :
                 (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && winning === 0 && playerIndex === 0) ? '#fff' :
                   (!gameOver && playerIndex === turnForPlayer && playerIndex === 1) || (gameOver && winning && playerIndex === 1) ? '#000' : 'inherit',
-              width: '360px',
               margin: '0 0 15px',
               float: 'left',
               transition: 'background-color .2s .8s, color .2s .8s',
@@ -257,29 +257,43 @@ export function Fliptiles() {
           },
           m('.piece', {
             style: {
-              display: 'inline-block',
               width: '16px', height: '16px',
               borderRadius: '16px',
               border: '1px solid #999',
-              margin: '1px 10px 5px',
-              position: 'relative',
-              top: '6px',
+              position: 'absolute',
+              top: '11px',
+              left: '15px',
               background: player.colour
             }
           }),
-          player.name, ' (', piecesPerPlayer[playerIndex], ') ',
-          playerIndex === turnForPlayer && canPlay && ` to play `,
-          gameOver && winning === playerIndex && m('b', ' wins '),
-          gameOver && winning === undefined && m('b', ' draws '),
-          playerIndex === turnForPlayer && !canPlay && opponentCanPlay && [
-            m('b', ` can’t play `), ' — ',
-            m(m.route.Link, {
-              href: routeTemplate,
-              params: { ...vnode.attrs, turnStr: opponent },
-            }, `Pass`)],
+          m('.playerText',
+            {
+              style: {
+                position: 'absolute',
+                left: '40px',
+                top: '6.5px',
+              }
+            },
+            player.name, ' (', piecesPerPlayer[playerIndex], ') ',
+            playerIndex === turnForPlayer && canPlay && ` to play `,
+            gameOver && winning === playerIndex && m('b', ' wins '),
+            gameOver && winning === undefined && m('b', ' draws '),
+            playerIndex === turnForPlayer && !canPlay && opponentCanPlay && [
+              m('b', ` can’t play `), ' — ',
+              m(m.route.Link, {
+                href: routeTemplate,
+                params: { ...vnode.attrs, turnStr: opponent },
+              }, `Pass`)],
+          ),
 
           m('label',
-            { style: { display: 'inline-block', position: 'absolute', marginTop: '4px', right: '2ex' } },
+            {
+              style: {
+                position: 'absolute',
+                right: '18px',
+                top: '6.5px',
+              }
+            },
             m('input[type=checkbox]', {
               checked: flags[playerIndex === 0 ? 'ai0' : 'ai1'] as boolean,
               onchange: () => {
