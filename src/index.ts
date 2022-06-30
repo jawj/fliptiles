@@ -194,7 +194,7 @@ export function Fliptiles() {
   function afterDraw(vnode: m.Vnode<FliptilesAttrs>) {
     errorIndex = undefined;  // clear error appearance on next redraw
 
-    if (aiTimeout !== undefined) clearTimeout(aiTimeout);
+    if (aiTimeout !== undefined) clearTimeout(aiTimeout);  // don't stack up AI moves
     aiTimeout = undefined;
 
     const
@@ -225,7 +225,7 @@ export function Fliptiles() {
         lastPiecePosition = positionFromPieceIndex(lastPieceIndex ?? -1),
         piecesPerPlayer = piecesByPlayer(board),
         blanks = piecesPerPlayer[x],
-        ordinaryMove = prevBlanks === undefined || blanks === prevBlanks - 1,
+        ordinaryMove = prevBlanks === undefined || blanks === prevBlanks - 1,  // for animation purposes
         canPlay = playerCanPlay(board, turnForPlayer),
         opponent = 1 - turnForPlayer as 0 | 1,
         opponentCanPlay = !canPlay && playerCanPlay(board, opponent),
@@ -267,13 +267,7 @@ export function Fliptiles() {
             }
           }),
           m('.playerText',
-            {
-              style: {
-                position: 'absolute',
-                left: '40px',
-                top: '6.5px',
-              }
-            },
+            { style: { position: 'absolute', left: '40px', top: '6.5px', } },
             player.name, ' (', piecesPerPlayer[playerIndex], ') ',
             playerIndex === turnForPlayer && canPlay && ` to play `,
             gameOver && winning === playerIndex && m('b', ' wins '),
@@ -285,7 +279,6 @@ export function Fliptiles() {
                 params: { ...vnode.attrs, turnStr: opponent },
               }, `Pass`)],
           ),
-
           m('label',
             {
               style: {
@@ -306,7 +299,6 @@ export function Fliptiles() {
             }),
             ' AI'
           ),
-
         )),
         m('.board',
           {
@@ -354,7 +346,6 @@ export function Fliptiles() {
                 },
                 onclick: () => {
                   if (aiTimeout !== undefined) return;
-
                   const success = playAtPieceIndex(board, pieceIndex, turnForPlayer, vnode);
                   if (!success && board[pieceIndex] === x) {
                     errorIndex = pieceIndex;
