@@ -4,7 +4,13 @@ interface FliptilesAttrs {
   boardStr: string;
   lastPieceStr: string;
   turnStr: string;
-  gridNos: 'y' | 'n';
+  flagsCode: number;
+}
+
+interface Flags {
+  gridNos: boolean;
+  ai0: boolean;
+  ai1: boolean;
 }
 
 interface Position {  // can also represent a vector movement
@@ -15,7 +21,6 @@ interface Position {  // can also represent a vector movement
 type Board = (0 | 1 | typeof x)[];
 
 const
-  size = 8,
   x = 2,  // signifies blank square: **MUST BE 2** because we use base 3 to serialize
   initialBoard: Board = [
     x, x, x, x, x, x, x, x,
@@ -27,12 +32,11 @@ const
     x, x, x, x, x, x, x, x,
     x, x, x, x, x, x, x, x,
   ],
-  origBoardScheme: boolean = true,  // original scheme groups in 3s, takes 22 chars; new scheme groups in 7s, takes 19
-  codeChars = origBoardScheme ? `234567bcdfghjkmnpqrstvwxyz-` : `2345678BbCcDdFfGgHhJjKkMmNnPpQqRrSsTtVvWwXxYyZz`,
+  codeChars = `234567bcdfghjkmnpqrstvwxyz-`,
   codeCharHash = Object.fromEntries(codeChars.split('').map((x, i) => [x, i])),
   initialBoardStr = stringFromBoard(initialBoard),
-  routeTemplate = '/:gridNos/:boardStr/:lastPieceStr/:turnStr',
-  defaultRoute = `/n/${initialBoardStr}/-/0`,  // = no cell names, initial board, no previous piece, black to start
+  routeTemplate = '/:flagsCode/:boardStr/:lastPieceStr/:turnStr',
+  defaultRoute = `/0/${initialBoardStr}/-/0`,  // = no cell names, initial board, no previous piece, black to start
   players = [
     { name: 'Black', colour: '#000' },
     { name: 'White', colour: '#fff' },
@@ -49,30 +53,29 @@ const
   ];
 
 function stringFromBoard(board: Board) {
-  return origBoardScheme ?
-    (board.join('') + '22').match(/.{1,3}/g)!.map(x => codeChars.charAt(parseInt(x, 3))).join('') :
-    board.join('').match(/.{7}/g)!.map(x => {
-      const value = parseInt(x, 3);
-      return codeChars.charAt(Math.floor(value / 47)) + codeChars.charAt(value % 47);
-    }).join('') + String(board[63]);
+  return (board.join('') + '22').match(/.{1,3}/g)!.map(x => codeChars.charAt(parseInt(x, 3))).join('');
 }
 
 function boardFromString(s: string) {
-  return origBoardScheme ?
-    s.split('').flatMap(x => (27 + codeCharHash[x]).toString(3).slice(-3).split('').map(Number)).slice(0, 64) as Board :
-    s.match(/../g)!.flatMap(x =>
-      (2187 + codeCharHash[x.charAt(0)] * 47 + codeCharHash[x.charAt(1)]).toString(3).slice(-7).split('').map(Number)
-    ).concat(Number(s.slice(-1))) as Board;
+  return s.split('').flatMap(x => (27 + codeCharHash[x]).toString(3).slice(-3).split('').map(Number)).slice(0, 64) as Board;
+}
+
+function encodeFlags(flags: Flags) {
+  return (flags.gridNos ? 1 : 0) * 0b001 + (flags.ai0 ? 1 : 0) * 0b010 + (flags.ai1 ? 1 : 0) * 0b100;
+}
+
+function decodeFlags(flags: number): Flags {
+  return { gridNos: !!(flags & 0b001), ai0: !!(flags & 0b010), ai1: !!(flags & 0b100) };
 }
 
 function positionFromPieceIndex(pieceIndex: number): Position | undefined {
-  if (pieceIndex < 0 || pieceIndex >= size * size) return;
-  return { downwards: Math.floor(pieceIndex / size), rightwards: pieceIndex % size };
+  if (pieceIndex < 0 || pieceIndex >= 64) return;
+  return { downwards: Math.floor(pieceIndex / 8), rightwards: pieceIndex % 8 };
 }
 
 function pieceIndexFromPosition(position: Position): number | undefined {
-  if (position.downwards < 0 || position.downwards >> size || position.rightwards < 0 || position.rightwards >= size) return;
-  return position.downwards * size + position.rightwards;
+  if (position.downwards < 0 || position.downwards >= 8 || position.rightwards < 0 || position.rightwards >= 8) return;
+  return position.downwards * 8 + position.rightwards;
 }
 
 function addPosition(p1: Position, p2: Position) {
@@ -167,7 +170,7 @@ function suggestMoves(board: Board, player: 0 | 1) {
     for (let j = 0; j < 64; j++) {
       const board2 = boardByPlayingPieceAtIndex(board1, j, opponent);
       if (!Array.isArray(board2)) continue;
-      // opponent score isn't redundant because of edge and corner boosts
+      // siubtracting opponent score isn't redundant, because of edge and corner boosts
       const score = boardScoreForPlayer(board2, player) - boardScoreForPlayer(board2, opponent);
       if (score < worstCaseScore) worstCaseScore = score;
     }
@@ -195,17 +198,17 @@ export function Fliptiles() {
     aiTimeout = undefined;
 
     const
-      { boardStr, turnStr } = vnode.attrs,
-      { ai } = vnode.attrs as any,
-      turnForPlayer = Number(turnStr) as 0 | 1;
+      { boardStr, turnStr, flagsCode } = vnode.attrs,
+      turnForPlayer = Number(turnStr) as 0 | 1,
+      flags = decodeFlags(flagsCode);
 
-    if (String(turnForPlayer) === ai) {
+    if ((turnForPlayer === 0 && flags.ai0) || (turnForPlayer === 1 && flags.ai1)) {
       const
         board = boardFromString(boardStr),
         suggestedMoves = suggestMoves(board, turnForPlayer),
         suggestedMove = suggestedMoves[Math.floor(Math.random() * suggestedMoves.length)];
 
-      if (suggestedMove) aiTimeout = setTimeout(() => playAtPieceIndex(board, suggestedMove, turnForPlayer, vnode), 2000);
+      if (suggestedMove !== undefined) aiTimeout = setTimeout(() => playAtPieceIndex(board, suggestedMove, turnForPlayer, vnode), 2000);
     }
   }
 
@@ -214,8 +217,8 @@ export function Fliptiles() {
     onupdate: afterDraw,
     view: (vnode: m.Vnode<FliptilesAttrs>) => {
       const
-        { boardStr, turnStr, lastPieceStr, gridNos } = vnode.attrs,
-        { ai } = vnode.attrs as any,
+        { boardStr, turnStr, lastPieceStr, flagsCode } = vnode.attrs,
+        flags = decodeFlags(flagsCode),
         board = boardFromString(boardStr),
         turnForPlayer = Number(turnStr) as 0 | 1,
         lastPieceIndex = lastPieceStr === '-' ? undefined : Number(lastPieceStr),
@@ -237,7 +240,8 @@ export function Fliptiles() {
         players.map((player, playerIndex) => m('.player',
           {
             style: {
-              padding: '6px 10px 8px',
+              position: 'relative',
+              padding: '5px 10px 8px',
               borderRadius: '40px',
               background: !gameOver && turnForPlayer === playerIndex && !canPlay ? '#fc0' :
                 (!gameOver && playerIndex === turnForPlayer && playerIndex === 0) || (gameOver && playerIndex === winning && playerIndex === 0) ? '#000' :
@@ -273,6 +277,21 @@ export function Fliptiles() {
               href: routeTemplate,
               params: { ...vnode.attrs, turnStr: opponent },
             }, `Pass`)],
+
+          m('label',
+            { style: { display: 'inline-block', position: 'absolute', marginTop: '4px', right: '2ex' } },
+            m('input[type=checkbox]', {
+              checked: flags[playerIndex === 0 ? 'ai0' : 'ai1'] as boolean,
+              onchange: () => {
+                const newFlagsCode = encodeFlags({
+                  ...flags,
+                  [`ai${playerIndex}`]: !flags[playerIndex === 0 ? 'ai0' : 'ai1'] as boolean,
+                });
+                m.route.set(routeTemplate, { ...vnode.attrs, flagsCode: newFlagsCode });
+              }
+            }),
+            ' AI'
+          ),
 
         )),
         m('.board',
@@ -329,7 +348,7 @@ export function Fliptiles() {
                   }
                 }
               },
-              gridNos === 'y' && [
+              flags.gridNos && [
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][piecePosition.rightwards],
                 piecePosition.downwards + 1,
               ],
@@ -353,13 +372,15 @@ export function Fliptiles() {
         m('label',
           { style: { float: 'right' } },
           m('input[type=checkbox]', {
-            checked: gridNos === 'y',
-            onchange: () =>
-              m.route.set(routeTemplate, { ...vnode.attrs, gridNos: { y: 'n', n: 'y' }[gridNos] })
+            checked: flags.gridNos,
+            onchange: () => {
+              const newFlagsCode = encodeFlags({ ...flags, gridNos: !flags.gridNos });
+              m.route.set(routeTemplate, { ...vnode.attrs, flagsCode: newFlagsCode });
+            }
           }),
           ' Named cells'
         ),
-        m(m.route.Link, { href: `/:gridNos/${initialBoardStr}/-/0`, params: { gridNos, ...(ai ? { ai } : {}) }, style: { fontWeight: 'bold' } }, 'Start again'),
+        m(m.route.Link, { href: `/:flagsCode/${initialBoardStr}/-/0`, params: { flagsCode }, style: { fontWeight: 'bold' } }, 'Start again'),
         m.trust(' &nbsp; '),
         m('a', { href: 'https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english' }, 'How to play'),
         m.trust(' &nbsp; '),
