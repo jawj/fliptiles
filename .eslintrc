@@ -1,0 +1,75 @@
+{
+  "env": {
+    "browser": true,
+    "es2017": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:import/typescript"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json",
+    "sourceType": "module"
+  },
+  "ignorePatterns": [
+    "**/*.d.ts",
+    "**/*.js",
+    "**/*.mjs"
+  ],
+  "plugins": [
+    "@typescript-eslint",
+    "import"
+  ],
+  "rules": {
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "import/no-self-import": "warn",
+    "import/no-cycle": "warn",
+    "curly": [
+      "error",
+      "multi-line"
+    ],
+    "no-template-curly-in-string": "error",
+    "prefer-const": "error",
+    "prefer-object-spread": "error",
+    "radix": "error",
+    "no-irregular-whitespace": [
+      "error",
+      {
+        "skipComments": true
+      }
+    ],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "vars": "all",
+        "args": "all",
+        "ignoreRestSiblings": false,
+        "argsIgnorePattern": "^_"
+      }
+    ],
+    "@typescript-eslint/await-thenable": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/member-delimiter-style": [
+      "error",
+      {
+        "multiline": {
+          "delimiter": "semi",
+          "requireLast": true
+        },
+        "singleline": {
+          "delimiter": "semi",
+          "requireLast": false
+        }
+      }
+    ],
+    "@typescript-eslint/semi": [
+      "error",
+      "always"
+    ],
+    "@typescript-eslint/strict-boolean-expressions": "error"
+  }
+}

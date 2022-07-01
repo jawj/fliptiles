@@ -90,7 +90,7 @@ function flippableOpponentPiecesByDirection(board: Board, position: Position, pl
     let opponentPieces = 0;
     const currentPosition = { ...position };
 
-    while (true) {
+    for (; ;) {
       addPosition(currentPosition, direction);
       const currentIndex = pieceIndexFromPosition(currentPosition)!;
       if (board[currentIndex] === opponent) opponentPieces += 1;
@@ -288,11 +288,11 @@ export function Fliptiles() {
               }
             },
             m('input[type=checkbox]', {
-              checked: flags[playerIndex === 0 ? 'ai0' : 'ai1'] as boolean,
+              checked: flags[playerIndex === 0 ? 'ai0' : 'ai1'],
               onchange: () => {
                 const newFlagsCode = encodeFlags({
                   ...flags,
-                  [`ai${playerIndex}`]: !flags[playerIndex === 0 ? 'ai0' : 'ai1'] as boolean,
+                  [`ai${playerIndex}`]: !flags[playerIndex === 0 ? 'ai0' : 'ai1'],
                 });
                 m.route.set(routeTemplate, { ...vnode.attrs, flagsCode: newFlagsCode });
               }
@@ -371,7 +371,7 @@ export function Fliptiles() {
                   background: playerIndex !== x ? players[1].colour : 'transparent',
                 }
               }),
-            )
+            );
           })
         ),
         m('label',
@@ -390,7 +390,7 @@ export function Fliptiles() {
         m('a', { href: 'https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english' }, 'How to play'),
         m.trust(' &nbsp; '),
         m('a', { href: 'https://github.com/jawj/fliptiles', style: { color: '#bbb' } }, 'Code on GitHub'),
-      )
+      );
     }
   };
 }
