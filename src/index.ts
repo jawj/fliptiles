@@ -149,7 +149,7 @@ function piecesByPlayer(board: Board) {
   return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
 }
 
-function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 3, edgeScore = 2, otherScore = 1) {
+function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 4, edgeScore = 2, otherScore = 1) {
   return board.reduce((memo: number, piece, i) =>
     memo + (piece !== player ? 0 :
       i === 0 || i === 7 || i === 56 || i === 63 ? cornerScore :
@@ -166,12 +166,15 @@ function suggestMoves(board: Board, player: 0 | 1) {
     const board1 = boardByPlayingPieceAtIndex(board, i, player);
     if (!Array.isArray(board1)) continue;
 
+    // the tie-break score represents how good the board is for us straight away
+    const tieBreakScore = (boardScoreForPlayer(board1, player) - boardScoreForPlayer(board1, opponent)) / 100;
+
     let worstCaseScore = Infinity;
     for (let j = 0; j < 64; j++) {
       const board2 = boardByPlayingPieceAtIndex(board1, j, opponent);
       if (!Array.isArray(board2)) continue;
-      // siubtracting opponent score isn't redundant, because of edge and corner boosts
-      const score = boardScoreForPlayer(board2, player) - boardScoreForPlayer(board2, opponent);
+      // subtracting opponent score isn't redundant, because of edge and corner boosts
+      const score = boardScoreForPlayer(board2, player) - boardScoreForPlayer(board2, opponent) + tieBreakScore;
       if (score < worstCaseScore) worstCaseScore = score;
     }
 
