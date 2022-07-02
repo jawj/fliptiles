@@ -41,16 +41,7 @@ const
     { name: 'Black', colour: '#000' },
     { name: 'White', colour: '#fff' },
   ],
-  directions: Position[] = [
-    { rightwards: 1, downwards: 0 }, // left -> right
-    { rightwards: 1, downwards: 1 }, // top-left -> bottom-right
-    { rightwards: 0, downwards: 1 }, // top -> bottom
-    { rightwards: -1, downwards: 1 }, // top-right -> bottom-left
-    { rightwards: -1, downwards: 0 }, // right -> left
-    { rightwards: -1, downwards: -1 }, // bottom-right -> top-left
-    { rightwards: 0, downwards: -1 }, // bottom -> top 
-    { rightwards: 1, downwards: -1 }, // bottom-left -> top-right
-  ];
+  directions = [-1, 0, 1].flatMap(d => (d === 0 ? [-1, 1] : [-1, 0, 1]).map(r => ({ downwards: d, rightwards: r })));
 
 function stringFromBoard(board: Board) {
   return (board.join('') + '22').match(/.{1,3}/g)!.map(x => codeChars.charAt(parseInt(x, 3))).join('');
