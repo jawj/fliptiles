@@ -140,7 +140,7 @@ function piecesByPlayer(board: Board) {
   return board.reduce((memo, piece) => { memo[piece] += 1; return memo; }, [0, 0, 0]);
 }
 
-function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 4, edgeScore = 2, otherScore = 1) {
+function boardScoreForPlayer(board: Board, player: 0 | 1, cornerScore = 12, edgeScore = 4, otherScore = 1) {
   return board.reduce((memo: number, piece, i) =>
     memo + (piece !== player ? 0 :
       i === 0 || i === 7 || i === 56 || i === 63 ? cornerScore :
